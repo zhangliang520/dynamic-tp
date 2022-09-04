@@ -21,8 +21,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import static org.apache.dubbo.common.constants.CommonConstants.EXECUTOR_SERVICE_COMPONENT_KEY;
-
 /**
  * ApacheDubboDtpAdapter related
  *
@@ -53,13 +51,9 @@ public class ApacheDubboDtpAdapter extends AbstractDtpAdapter {
         String currVersion = Version.getVersion();
         if (DubboVersion.compare(DubboVersion.VERSION_2_7_5, currVersion) > 0) {
             DataStore dataStore = ExtensionLoader.getExtensionLoader(DataStore.class).getDefaultExtension();
-            Map<String, Object> executors = dataStore.get(EXECUTOR_SERVICE_COMPONENT_KEY);
+            Map<String, Object> executors = dataStore.get(ExecutorService.class.getName());
             if (MapUtil.isNotEmpty(executors)) {
-                executors.forEach((k, v) -> {
-                    val name = genTpName(k);
-                    val executorWrapper = new ExecutorWrapper(name, (ThreadPoolExecutor) v);
-                    DUBBO_EXECUTORS.put(name, executorWrapper);
-                });
+                executors.forEach((k, v) -> doInit(k, (ThreadPoolExecutor) v));
             }
             return;
         }
@@ -76,16 +70,18 @@ public class ApacheDubboDtpAdapter extends AbstractDtpAdapter {
         if (Objects.isNull(data)) {
             return;
         }
-        Map<Integer, ExecutorService> executorMap = data.get(EXECUTOR_SERVICE_COMPONENT_KEY);
+        Map<Integer, ExecutorService> executorMap = data.get(ExecutorService.class.getName());
         if (MapUtil.isNotEmpty(executorMap)) {
-            executorMap.forEach((k, v) -> {
-                val name = genTpName(k.toString());
-                val executorWrapper = new ExecutorWrapper(name, (ThreadPoolExecutor) v);
-                initNotifyItems(name, executorWrapper);
-                DUBBO_EXECUTORS.put(name, executorWrapper);
-            });
+            executorMap.forEach((k, v) -> doInit(k.toString(), (ThreadPoolExecutor) v));
         }
         log.info("DynamicTp adapter, apache dubbo executors init end, executors: {}", DUBBO_EXECUTORS);
+    }
+
+    private void doInit(String port, ThreadPoolExecutor executor) {
+        val name = genTpName(port);
+        val executorWrapper = new ExecutorWrapper(name, executor);
+        initNotifyItems(name, executorWrapper);
+        DUBBO_EXECUTORS.put(name, executorWrapper);
     }
 
     private String genTpName(String port) {

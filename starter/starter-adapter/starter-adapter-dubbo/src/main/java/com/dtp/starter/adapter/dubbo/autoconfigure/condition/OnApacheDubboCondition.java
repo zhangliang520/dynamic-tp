@@ -21,4 +21,7 @@ public class OnApacheDubboCondition extends AnyNestedCondition {
 
     @ConditionalOnBean(type = "org.apache.dubbo.config.spring.beans.factory.annotation.ServiceAnnotationPostProcessor")
     static class ServiceAnnotationBpp {}
+
+    @ConditionalOnBean(type = "org.apache.dubbo.config.spring.beans.factory.annotation.ServiceAnnotationBeanPostProcessor")
+    static class ServiceAnnotationBeanBpp {}
 }
